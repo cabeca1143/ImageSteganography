@@ -30,12 +30,14 @@ public static class ImageProcessor
         int bytesToRead = BitConverter.ToInt32(bytes);
 
         Console.WriteLine("Writing Data...");
-        byte[] data = new byte[bytesToRead];
+
+        FileStream fileStream = File.OpenWrite($"{Path.GetDirectoryName(imagePath)}/Output.out");
         for (int i = 0; i < bytesToRead; i++)
         {
-            data[i] = (stream.ReadBits(8, bitCount));
+            fileStream.WriteByte(stream.ReadBits(8, bitCount));
         }
-        File.WriteAllBytes($"{Path.GetDirectoryName(imagePath)}/Output.out", data);
+
+        fileStream.Close();
         imageStream.Close();
 
         Console.WriteLine("Done!");
