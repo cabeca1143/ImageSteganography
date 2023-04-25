@@ -2,14 +2,14 @@
 
 internal class Program
 {
-    static byte BitCount = 255;
     private static void Main()
     {
+        byte bitCount = 255;
         do
         {
             Console.Write("BitCount(1-8): ");
         }
-        while (!byte.TryParse(Console.ReadLine(), out BitCount) && BitCount >= 1 && BitCount <= 8);
+        while (!byte.TryParse(Console.ReadLine(), out bitCount) && bitCount >= 1 && bitCount <= 8);
 
         Console.Clear();
 
@@ -39,7 +39,7 @@ internal class Program
                     Console.Write("Data Path: ");
                     string? dataFilePath = Console.ReadLine();
 
-                    if(!File.Exists(imagePath))
+                    if (!File.Exists(imagePath))
                     {
                         Console.WriteLine($"Image \"{imagePath}\" does not exist! Please double-check the path!");
                         Thread.Sleep(1500);
@@ -55,7 +55,7 @@ internal class Program
                     }
 
                     Console.Clear();
-                    ImageProcessor.Encoder(imagePath, dataFilePath, BitCount);
+                    ImageProcessor.Encoder(imagePath, dataFilePath, bitCount);
                     break;
                 case 2:
                     Console.Clear();
@@ -70,7 +70,7 @@ internal class Program
                     }
 
                     Console.Clear();
-                    ImageProcessor.Decoder(imagePath, BitCount);
+                    ImageProcessor.Decoder(imagePath, bitCount);
                     break;
                 case 3:
                     Console.WriteLine("Exiting...");

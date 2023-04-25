@@ -1,6 +1,5 @@
 ﻿using BitStreamNS;
 using ExtensionsNS;
-using System.Text;
 
 namespace ImageProcessorNS;
 
@@ -18,10 +17,10 @@ public static class ImageProcessor
 
         byte[] bytes = new byte[4]
         {
-        stream.ReadBits(8, bitCount),
-        stream.ReadBits(8, bitCount),
-        stream.ReadBits(8, bitCount),
-        stream.ReadBits(8, bitCount)
+            stream.ReadBits(8, bitCount),
+            stream.ReadBits(8, bitCount),
+            stream.ReadBits(8, bitCount),
+            stream.ReadBits(8, bitCount)
         };
 
         if (!BitConverter.IsLittleEndian)
@@ -31,13 +30,13 @@ public static class ImageProcessor
         int bytesToRead = BitConverter.ToInt32(bytes);
 
         Console.WriteLine("Writing Data...");
-        StreamWriter file = new(File.OpenWrite($"{Path.GetDirectoryName(imagePath)}/Output.txt"));
+        byte[] data = new byte[bytesToRead];
         for (int i = 0; i < bytesToRead; i++)
         {
-            file.Write((char)stream.ReadBits(8, bitCount));
+            data[i] = (stream.ReadBits(8, bitCount));
         }
+        File.WriteAllBytes($"{Path.GetDirectoryName(imagePath)}/Output.out", data);
         imageStream.Close();
-        file.Close();
 
         Console.WriteLine("Done!");
         Thread.Sleep(2000);
@@ -54,10 +53,10 @@ public static class ImageProcessor
         Image<Rgb24> image = Image.Load<Rgb24>(new(), File.OpenRead(imagePath));
 
         Console.WriteLine("Reading Data...");
-        string fileText = File.ReadAllText(dataPath);
+        byte[] fileData = File.ReadAllBytes(dataPath);
 
-        writer.Write(fileText.Length);
-        stream.Write(Encoding.ASCII.GetBytes(fileText));
+        writer.Write(fileData.Length);
+        stream.Write(fileData);
         reader = new(stream);
         stream.Position = 0;
 

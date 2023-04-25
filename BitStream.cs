@@ -16,7 +16,7 @@ class BitStream
 
     public byte ReadBits(int count, int bitCount = 8)
     {
-        byte toReturn = (byte)ReadBit(bitCount);
+        byte toReturn = ReadBit(bitCount);
         for (int i = 1; i < count; i++)
         {
             byte result = ReadBit(bitCount);
