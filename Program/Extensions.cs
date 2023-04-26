@@ -1,36 +1,35 @@
-﻿namespace ExtensionsNS
+﻿namespace ExtensionsNS;
+
+public static class Extensions
 {
-    public static class Extensions
+    public static byte OverrideBits(this byte variable, byte value, byte count) => (byte)((variable & 0xFF << count) | value);
+
+    public static byte Reverse(this byte value, int size)
     {
-        public static byte OverrideBits(this byte variable, byte value, byte count) => (byte)((variable & 0xFF << count) | value);
-
-        public static byte Reverse(this byte value, int size)
+        byte reverse = 0;
+        for (int bit = 0; bit < size; bit++)
         {
-            byte reverse = 0;
-            for (int bit = 0; bit < size; bit++)
-            {
-                reverse <<= 1;
-                reverse |= (byte)(value & 1);
-                value >>= 1;
-            }
-
-            return reverse;
+            reverse <<= 1;
+            reverse |= (byte)(value & 1);
+            value >>= 1;
         }
 
-        public static Stream ToStream(this Image<Rgb24> image)
-        {
-            MemoryStream stream = new();
-            for (int y = 0; y < image.Height; y++)
-            {
-                for (int x = 0; x < image.Width; x++)
-                {
-                    stream.WriteByte(image[x, y].R);
-                    stream.WriteByte(image[x, y].G);
-                    stream.WriteByte(image[x, y].B);
-                }
-            }
+        return reverse;
+    }
 
-            return stream;
+    public static Stream ToStream(this Image<Rgb24> image)
+    {
+        MemoryStream stream = new();
+        for (int y = 0; y < image.Height; y++)
+        {
+            for (int x = 0; x < image.Width; x++)
+            {
+                stream.WriteByte(image[x, y].R);
+                stream.WriteByte(image[x, y].G);
+                stream.WriteByte(image[x, y].B);
+            }
         }
+
+        return stream;
     }
 }

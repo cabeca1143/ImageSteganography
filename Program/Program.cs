@@ -4,12 +4,13 @@ internal class Program
 {
     private static void Main()
     {
-        byte bitCount = 255;
+        byte bitCount;
         do
         {
             Console.Write("BitCount(1-8): ");
+            _ = byte.TryParse(Console.ReadLine(), out bitCount);
         }
-        while (!byte.TryParse(Console.ReadLine(), out bitCount) && bitCount >= 1 && bitCount <= 8);
+        while (!(bitCount >= 1 || bitCount <= 8));
 
         Console.Clear();
 
@@ -35,9 +36,9 @@ internal class Program
                 case 1:
                     Console.Clear();
                     Console.Write("Image Path: ");
-                    imagePath = Console.ReadLine();
+                    imagePath = Console.ReadLine()?.Replace("\"", string.Empty);
                     Console.Write("Data Path: ");
-                    string? dataFilePath = Console.ReadLine();
+                    string? dataFilePath = Console.ReadLine()?.Replace("\"", string.Empty);
 
                     if (!File.Exists(imagePath))
                     {
@@ -60,7 +61,7 @@ internal class Program
                 case 2:
                     Console.Clear();
                     Console.Write("Image Path: ");
-                    imagePath = Console.ReadLine();
+                    imagePath = Console.ReadLine()?.Replace("\"", string.Empty);
                     if (!File.Exists(imagePath))
                     {
                         Console.WriteLine($"Image \"{imagePath}\" does not exist! Please double-check the path!");
