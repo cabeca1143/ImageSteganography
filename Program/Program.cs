@@ -1,79 +1,41 @@
-﻿using ImageProcessorNS;
+﻿using System.Diagnostics;
 
 internal class Program
 {
     private static void Main()
     {
-        byte bitCount;
-        do
-        {
-            Console.Write("BitCount(1-8): ");
-            _ = byte.TryParse(Console.ReadLine(), out bitCount);
-        }
-        while (!(bitCount >= 1 || bitCount <= 8));
-
+        byte bitCount = GetBitCount();
         Console.Clear();
 
         while (true)
         {
-        loopStart:
+            Console.Clear();
             Console.WriteLine("Select an Option:");
             Console.WriteLine("1) Encode Data in an Image");
             Console.WriteLine("2) Decode Data in an Image");
-            Console.WriteLine("3) Exit");
+            Console.WriteLine($"3) Set BitCount (Cur: {bitCount})");
+            Console.WriteLine("4) Exit");
 
             if (!int.TryParse(Console.ReadLine(), out int input))
             {
                 Console.WriteLine("Invalid input! Please use only numbers!");
                 Thread.Sleep(1500);
                 Console.Clear();
-                goto loopStart;
+                continue;
             }
 
-            string? imagePath;
             switch (input)
             {
                 case 1:
-                    Console.Clear();
-                    Console.Write("Image Path: ");
-                    imagePath = Console.ReadLine()?.Replace("\"", string.Empty);
-                    Console.Write("Data Path: ");
-                    string? dataFilePath = Console.ReadLine()?.Replace("\"", string.Empty);
-
-                    if (!File.Exists(imagePath))
-                    {
-                        Console.WriteLine($"Image \"{imagePath}\" does not exist! Please double-check the path!");
-                        Thread.Sleep(1500);
-                        Console.Clear();
-                        break;
-                    }
-                    if (!File.Exists(dataFilePath))
-                    {
-                        Console.WriteLine($"File \"{dataFilePath}\" does not exist! Please double-check the path!");
-                        Thread.Sleep(1500);
-                        Console.Clear();
-                        break;
-                    }
-
-                    Console.Clear();
-                    ImageProcessor.Encoder(imagePath, dataFilePath, bitCount);
+                    HandleEncodeImage(bitCount);
                     break;
                 case 2:
-                    Console.Clear();
-                    Console.Write("Image Path: ");
-                    imagePath = Console.ReadLine()?.Replace("\"", string.Empty);
-                    if (!File.Exists(imagePath))
-                    {
-                        Console.WriteLine($"Image \"{imagePath}\" does not exist! Please double-check the path!");
-                        Thread.Sleep(1500);
-                        Console.Clear();
-                        break;
-                    }
-
-                    Console.Clear();
-                    ImageProcessor.Decoder(imagePath, bitCount);
+                    HandleDecodeImage(bitCount);
                     break;
                 case 3:
+                    bitCount = GetBitCount();
+                    break;
+                case 4:
                     Console.WriteLine("Exiting...");
                     return;
                 default:
@@ -83,5 +45,68 @@ internal class Program
                     break;
             }
         }
+    }
+
+    static void HandleEncodeImage(byte bitCount)
+    {
+        string? imagePath;
+        Console.Clear();
+
+        Console.Write("Image Path: ");
+        imagePath = Console.ReadLine()?.Replace("\"", string.Empty);
+        if (!File.Exists(imagePath))
+        {
+            Console.WriteLine($"Image \"{imagePath}\" does not exist! Please double-check the path!");
+            Thread.Sleep(1500);
+            Console.Clear();
+            return;
+        }
+
+        Console.Write("Data Path: ");
+        string? dataFilePath = Console.ReadLine()?.Replace("\"", string.Empty);
+        if (!File.Exists(dataFilePath))
+        {
+            Console.WriteLine($"File \"{dataFilePath}\" does not exist! Please double-check the path!");
+            Thread.Sleep(1500);
+            Console.Clear();
+            return;
+        }
+
+        Console.Clear();
+        ImageProcessor.Encoder(imagePath, dataFilePath, bitCount);
+    }
+
+    static void HandleDecodeImage(byte bitCount)
+    {
+        string? imagePath;
+        Console.Clear();
+
+        Console.Write("Image Path: ");
+        imagePath = Console.ReadLine()?.Replace("\"", string.Empty);
+        if (!File.Exists(imagePath))
+        {
+            Console.WriteLine($"Image \"{imagePath}\" does not exist! Please double-check the path!");
+            Thread.Sleep(1500);
+            Console.Clear();
+            return;
+        }
+
+        Console.Clear();
+        ImageProcessor.Decoder(imagePath, bitCount);
+    }
+
+    static byte GetBitCount()
+    {
+    getBitCount:
+        Console.Clear();
+        Console.Write("BitCount(1-8): ");
+        if (!byte.TryParse(Console.ReadLine(), out byte bitCount) || bitCount is < 1 or > 8)
+        {
+            Console.WriteLine("Invalid Bit count! Please use numbers between 1 and 8!");
+            Thread.Sleep(1500);
+            Console.Clear();
+            goto getBitCount;
+        }
+        return bitCount;
     }
 }

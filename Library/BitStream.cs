@@ -5,10 +5,9 @@ namespace BitStreamNS;
 class BitStream
 {
     private readonly Stream _stream;
-    private byte _current;
     private string _currentBinary = "";
     private int _index = 8;
-    private int _bitCount = 8;
+    private readonly int _bitCount = 8;
     public bool EndOfStream => _stream.Position == _stream.Length && _index == 8;
     public BitStream(Stream stream, int bitCount)
     {
@@ -39,8 +38,7 @@ class BitStream
     {
         if (_index >= 8)
         {
-            _current = (byte)_stream.ReadByte();
-            _currentBinary = Convert.ToString(_current, 2);
+            _currentBinary = Convert.ToString(_stream.ReadByte(), 2);
             while (_currentBinary.Length < 8)
             {
                 _currentBinary = '0' + _currentBinary;
@@ -67,10 +65,33 @@ class BitStream
         return BitConverter.ToInt32(bytes);
     }
 
+    public long ReadLong()
+    {
+        byte[] bytes = new byte[8]
+{
+            ReadBits(8),
+            ReadBits(8),
+            ReadBits(8),
+            ReadBits(8),
+            ReadBits(8),
+            ReadBits(8),
+            ReadBits(8),
+            ReadBits(8)
+        };
+
+        //Check
+        if (!BitConverter.IsLittleEndian)
+        {
+            Array.Reverse(bytes);
+        }
+
+        return BitConverter.ToInt64(bytes);
+    }
+
     public string ReadString(int size)
     {
         string toReturn = "";
-        for(int i = 0; i < size; i++)
+        for (int i = 0; i < size; i++)
         {
             toReturn += (char)ReadBits(8);
         }
