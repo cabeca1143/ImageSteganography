@@ -1,16 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <ApplicationIcon>avj1c-0hyr3-001.ico</ApplicationIcon>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net7.0-windows</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<ApplicationIcon>avj1c-0hyr3-001.ico</ApplicationIcon>
+		<Platforms>AnyCPU;x64</Platforms>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="avj1c-0hyr3-001.ico" />
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="avj1c-0hyr3-001.ico" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Library\Library.csproj" />

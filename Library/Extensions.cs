@@ -1,10 +1,14 @@
-﻿namespace ExtensionsNS;
+﻿using BitStreamNS;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+
+namespace ExtensionsNS;
 
 public static class Extensions
 {
-    public static byte OverrideBits(this byte variable, byte value, byte count) => (byte)((variable & 0xFF << count) | value);
+    internal static byte OverrideBits(this byte variable, byte value, byte count) => (byte)((variable & 0xFF << count) | value);
 
-    public static byte Reverse(this byte value, int size)
+    internal static byte Reverse(this byte value, int size)
     {
         byte reverse = 0;
         for (int bit = 0; bit < size; bit++)
@@ -17,9 +21,9 @@ public static class Extensions
         return reverse;
     }
 
-    public static Stream ToStream(this Image<Rgb24> image)
+    internal static Stream ToStream(this Image<Rgb24> image)
     {
-        MemoryStream stream = new();
+        FileStream stream = File.Open("BufferStream.buf", FileMode.Create, FileAccess.ReadWrite);
         for (int y = 0; y < image.Height; y++)
         {
             for (int x = 0; x < image.Width; x++)
@@ -30,6 +34,12 @@ public static class Extensions
             }
         }
 
+        stream.Position = 0;
         return stream;
+    }
+
+    internal static byte GetImageByte(this byte originalByte, BitStream stream, bool toOverride, byte bitCount)
+    {
+        return toOverride ? originalByte : originalByte.OverrideBits(stream.ReadBits(bitCount), bitCount);
     }
 }
