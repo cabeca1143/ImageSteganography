@@ -1,8 +1,7 @@
 ﻿using BitStreamNS;
 using ExtensionsNS;
-using System.IO.Compression;
 using System.Text;
-using SixLabors.ImageSharp.Formats.Png;
+
 public static class ImageProcessor
 {
     public static void Decoder(string imagePath, byte bitCount)
@@ -114,6 +113,7 @@ public static class ImageProcessor
         Console.WriteLine("1) PNG");
         Console.WriteLine("2) BMP");
         Console.WriteLine("3) Both");
+        //TODO: Add stupport to change compression rate
         switch (Console.ReadLine())
         {
             case "1":
@@ -152,6 +152,6 @@ public static class ImageProcessor
     {
         Console.WriteLine("Writing file data to Stream...");
         await file.CopyToAsync(toCopyTo);
-        Console.WriteLine("Data copied to Strem!");
+        Console.WriteLine("Data copied to Stream!");
     }
 }
