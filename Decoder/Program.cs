@@ -5,21 +5,17 @@
         if (args.Length == 0 || !File.Exists(args[0]))
         {
             Console.WriteLine("Invalid Image path! Please Drag and Drop the image to decode on the Executable!");
-            Console.ReadKey();
+            _ = Console.ReadKey();
             return;
         }
 
     getInput:
         Console.Write("Bit Size (1-8): ");
-        if (!byte.TryParse(Console.ReadLine(), out byte bitCount))
+        if (!byte.TryParse(Console.ReadLine(), out byte bitCount) || bitCount is > 8 or < 1)
         {
-            Console.WriteLine("Invalid input!");
-            Console.ReadKey();
-            return;
-        }
-        if (bitCount is > 8 or < 1)
-        {
-            Console.WriteLine("Invalid Number! Please use numbers between 1 and 8!");
+            Console.WriteLine("Invalid input! Please use numbers between 1 and 8!");
+            Thread.Sleep(2000);
+            Console.Clear();
             goto getInput;
         }
 

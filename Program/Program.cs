@@ -1,7 +1,3 @@
-﻿using System.Diagnostics;
-using System.Drawing;
-using System.Runtime.InteropServices;
-
 internal class Program
 {
     private static void Main()

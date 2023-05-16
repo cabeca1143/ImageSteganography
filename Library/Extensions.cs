@@ -1,6 +1,4 @@
 ﻿using BitStreamNS;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace ExtensionsNS;
 
@@ -38,8 +36,8 @@ public static class Extensions
         return stream;
     }
 
-    internal static byte GetImageByte(this byte originalByte, BitStream stream, bool toOverride, byte bitCount)
+    internal static byte GetImageByte(this byte originalByte, BitStream stream, byte bitCount)
     {
-        return toOverride ? originalByte : originalByte.OverrideBits(stream.ReadBits(bitCount), bitCount);
+        return stream.EndOfStream ? originalByte : originalByte.OverrideBits(stream.ReadBits(bitCount), bitCount);
     }
 }
