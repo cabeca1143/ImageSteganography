@@ -1,4 +1,6 @@
-﻿class Decoder
+﻿using ImageProcessorNS;
+
+class Decoder
 {
     static void Main(string[] args)
     {

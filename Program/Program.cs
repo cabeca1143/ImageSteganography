@@ -1,7 +1,11 @@
+using ImageProcessorNS;
+
 internal class Program
 {
     private static void Main()
     {
+        Console.InputEncoding = System.Text.Encoding.Unicode;
+
         byte bitCount = GetBitCount();
 
         while (true)

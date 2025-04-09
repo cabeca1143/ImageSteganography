@@ -1,4 +1,6 @@
-﻿class Encoder
+﻿using ImageProcessorNS;
+
+class Encoder
 {
     static void Main(string[] args)
     {

@@ -1,17 +1,15 @@
-﻿namespace BitStreamNS;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
-class BitStream
+namespace BitStreamNS;
+
+class BitStream(Stream stream, int bitCount = 8)
 {
-    internal readonly Stream _stream;
-    private string _currentBinary = "";
+    internal readonly Stream _stream = stream;
+    private string _currentByte = "";
     private int _index = 8;
-    private readonly int _bitCount = 8;
+    private readonly int _bitCount = bitCount;
     public bool EndOfStream => _stream.Position == _stream.Length && _index == 8;
-    public BitStream(Stream stream, int bitCount, string? extension = null)
-    {
-        _stream = stream;
-        _bitCount = bitCount;
-    }
 
     public byte ReadBits(int count)
     {
@@ -22,7 +20,6 @@ class BitStream
             toReturn <<= 1;
             toReturn |= result;
         }
-
         return toReturn;
     }
 
@@ -30,53 +27,49 @@ class BitStream
     {
         if (_index >= 8)
         {
-            _currentBinary = Convert.ToString(_stream.ReadByte(), 2);
-            while (_currentBinary.Length < 8)
-            {
-                _currentBinary = '0' + _currentBinary;
-            }
+            _currentByte = Convert.ToString(_stream.ReadByte(), 2).PadLeft(8, '0');
             _index = 8 - _bitCount;
         }
-        return byte.Parse(_currentBinary[_index++].ToString());
+        return byte.Parse(_currentByte[_index++].ToString());
     }
 
-    public int ReadInt()
+    public byte ReadByte()
     {
-        byte[] bytes = new byte[4]
+        return ReadBits(8);
+    }
+
+    public T Read<T>() where T : unmanaged
+    {
+        Span<byte> bytes = stackalloc byte[Unsafe.SizeOf<T>()];
+        for (int i = 0; i < bytes.Length; i++)
         {
-            ReadBits(8),
-            ReadBits(8),
-            ReadBits(8),
-            ReadBits(8)
-        };
-
-        return BitConverter.ToInt32(bytes);
-    }
-
-    public long ReadLong()
-    {
-        byte[] bytes = new byte[8]
-{
-            ReadBits(8),
-            ReadBits(8),
-            ReadBits(8),
-            ReadBits(8),
-            ReadBits(8),
-            ReadBits(8),
-            ReadBits(8),
-            ReadBits(8)
-        };
-
-        return BitConverter.ToInt64(bytes);
-    }
-
-    public string ReadString(int size)
-    {
-        string toReturn = "";
-        for (int i = 0; i < size; i++)
-        {
-            toReturn += (char)ReadBits(8);
+            bytes[i] = ReadByte();
         }
-        return toReturn;
+        return MemoryMarshal.Read<T>(bytes);
+    }
+
+    //Keep this?
+    public unsafe T ReadUnsafe<T>() where T : unmanaged
+    {
+        int len = Unsafe.SizeOf<T>();
+        byte* ptr = stackalloc byte[len];
+        for (int i = 0; i < len; i++)
+        {
+            ptr[i] = ReadByte();
+        }
+        return *(T*)ptr;
+    }
+
+    public IEnumerable<T> ReadMany<T>(long count) where T : unmanaged
+    {
+        for (long i = 0; i < count; i++)
+        {
+            Span<byte> bytes = stackalloc byte[Unsafe.SizeOf<T>()];
+            for (int j = 0; j < bytes.Length; j++)
+            {
+                bytes[j] = ReadByte();
+            }
+            yield return MemoryMarshal.Read<T>(bytes);
+        }
     }
 }

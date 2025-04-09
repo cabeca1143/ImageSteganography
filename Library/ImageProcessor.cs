@@ -1,36 +1,45 @@
 ﻿using BitStreamNS;
 using ExtensionsNS;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using System.Runtime.CompilerServices;
 using System.Text;
+
+namespace ImageProcessorNS;
 
 public static class ImageProcessor
 {
     public static void Decoder(string imagePath, byte bitCount)
     {
         Console.WriteLine("Loading Image...");
-        Image<Rgb24> image = Image.Load<Rgb24>(new(), File.OpenRead(imagePath));
+
+        using Image<Rgb24> image = Image.Load<Rgb24>(new(), imagePath);
+        byte[] bytes = new byte[image.Width * image.Height * Unsafe.SizeOf<Rgb24>()];
+        image.CopyPixelDataTo(bytes);
 
         Console.WriteLine("Converting Image...");
-        using (Stream imageStream = image.ToStream())
+
+        using (Stream imageStream = new MemoryStream(bytes))
         {
             BitStream stream = new(imageStream, bitCount);
 
             //Read Length of the encoded file's extension
-            int extensionLength = stream.ReadInt();
+            int nameLength = stream.Read<int>();
+
             //Read the actual extension
-            string fileExtension = stream.ReadString(extensionLength);
+            string fileName = new([.. stream.ReadMany<char>(nameLength)]);
+
             //Read the ammount of bytes
-            long bytesToRead = stream.ReadLong();
+            long bytesToRead = stream.Read<long>();
 
+            //Read data
             Console.WriteLine("Writing Data...");
-
-            using FileStream fileStream = File.OpenWrite($"{Path.GetDirectoryName(imagePath)}/Output.{fileExtension}");
-            for (long i = 0; i < bytesToRead; i++)
+            using FileStream fileStream = File.OpenWrite($"{Path.GetDirectoryName(imagePath)}/{fileName}");
+            foreach (byte b in stream.ReadMany<byte>(bytesToRead))
             {
-                fileStream.WriteByte(stream.ReadBits(8));
+                fileStream.WriteByte(b);
             }
         }
-
-        image.Dispose();
 
         Console.WriteLine("Done!");
         Thread.Sleep(2000);
@@ -39,105 +48,117 @@ public static class ImageProcessor
 
     public static void Encoder(string imagePath, string dataPath, byte bitCount)
     {
+        using Task<Image<Rgb24>> imageTask = LoadImageAsync(imagePath);
+        using MemoryStream stream = new();
         string? outputPath = Path.GetDirectoryName(imagePath);
-        string extension = Path.GetExtension(dataPath).Remove(0, 1);
+        string fileName = Path.GetFileName(dataPath);
+        byte[] pixelData;
+        int width;
+        int height;
 
-        MemoryStream stream = new();
-        BitStream reader = new(stream, 8);
+        BitStream reader = new(stream);
 
-        //Read Image
-        Task<Image<Rgb24>> imageTask = LoadImageAsync(imagePath);
-
-        using (BinaryWriter br = new(stream, Encoding.UTF8, true))
+        //Populates a stream with all data to be encoded
+        if (!PopulateStream(stream, fileName, dataPath))
         {
-            //Write length of extension
-            br.Write(BitConverter.GetBytes(extension.Length));
+            return;
+        }
 
-            //Write actual extension
-            stream.Write(Encoding.ASCII.GetBytes(extension));
+        //Get Pixel bytes and encodes the desired data into them
+        using (Image<Rgb24> originalImage = imageTask.Result)
+        {
+            Console.WriteLine("Writing data to image...");
 
-            Console.WriteLine("Oppening File...");
-            using FileStream fileData = File.OpenRead(dataPath);
-            if (fileData.Length > int.MaxValue)
+            width = originalImage.Width;
+            height = originalImage.Height;
+            pixelData = new byte[originalImage.Width * originalImage.Height * Unsafe.SizeOf<Rgb24>()];
+
+            originalImage.CopyPixelDataTo(pixelData);
+            for (int i = 0; i < pixelData.Length && !reader.EndOfStream; i++)
             {
-                br.Close();
-                stream.Close();
-                fileData.Close();
-                imageTask.Dispose();
-
-                Console.WriteLine($"Data files can't be greater than {int.MaxValue} bytes!");
-                Thread.Sleep(3000);
-                return;
+                pixelData[i] = pixelData[i].GetImageByte(reader, bitCount);
             }
 
-            //Writes how many bytes the file has
-            br.Write(BitConverter.GetBytes(fileData.Length));
-
-            //Writes the actual file data
-            LoadDataFileAsync(fileData, stream).Wait();
-            stream.Position = 0;
-        }
-
-        Image<Rgb24> image = imageTask.Result;
-        imageTask.Dispose();
-
-        Console.WriteLine("Writing data to image...");
-        int height = image.Height;
-        int width = image.Width;
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
+            if (reader.EndOfStream)
             {
-                //Override old pixel
-                Rgb24 rgb = image[x, y];
-                image[x, y] = new()
-                {
-                    R = rgb.R.GetImageByte(reader, bitCount),
-                    G = rgb.G.GetImageByte(reader, bitCount),
-                    B = rgb.B.GetImageByte(reader, bitCount)
-                };
-
-                //Checks if the end of stream has been reached (All data has been written)
-                if (reader.EndOfStream)
-                {
-                    Console.WriteLine("End of Stream Reached!");
-                    goto getInput;
-                }
+                Console.WriteLine("End of Stream Reached!");
+            }
+            else
+            {
+                Console.WriteLine("End of stream not reached! Try increasing the BitCount or the Image Size!");
+                Console.WriteLine($"{stream.Length - stream.Position} bytes remain!");
             }
         }
-        Console.WriteLine("End of stream not reached! Try increasing the BitCount or the Image Size!");
-        Console.WriteLine($"{stream.Length - stream.Position} bytes remain!");
 
-    getInput:
-        Console.WriteLine("Which format do you want to save as?");
-        Console.WriteLine("1) PNG");
-        Console.WriteLine("2) BMP");
-        Console.WriteLine("3) Both");
-        //TODO: Add stupport to change compression rate
-        switch (Console.ReadLine())
+        //Final Encoded Image
+        using Image<Rgb24> image = Image.LoadPixelData<Rgb24>(pixelData, width, height);
+        while (true)
         {
-            case "1":
-                File.Delete($"{outputPath}/ImageOutput.png");
-                image.SaveAsPng(($"{outputPath}/ImageOutput.png"));
-                break;
-            case "2":
-                File.Delete($"{outputPath}/ImageOutput.bmp");
-                image.SaveAsBmp(File.OpenWrite($"{outputPath}/ImageOutput.bmp"));
-                break;
-            case "3":
-                File.Delete($"{outputPath}/ImageOutput.png");
-                File.Delete($"{outputPath}/ImageOutput.bmp");
-                image.SaveAsPng(($"{outputPath}/ImageOutput.png"));
-                image.SaveAsBmp(($"{outputPath}/ImageOutput.bmp"));
-                break;
-            default:
-                Console.Clear();
-                Console.WriteLine("Invalid Option! Please use numbers between 1 and 4!");
-                goto getInput;
+            Console.WriteLine("Which format do you want to save as?");
+            Console.WriteLine("1) PNG");
+            Console.WriteLine("2) BMP");
+            Console.WriteLine("3) Both");
+
+            string pngName = $"{outputPath}/ImageOutput.png";
+            string bmpName = $"{outputPath}/ImageOutput.bmp";
+            switch (Console.ReadLine())
+            {
+                case "1":
+                    File.Delete(pngName);
+                    image.SaveAsPng(pngName);
+                    return;
+                case "2":
+                    File.Delete(bmpName);
+                    image.SaveAsBmp(bmpName);
+                    return;
+                case "3":
+                    File.Delete(pngName);
+                    File.Delete(bmpName);
+                    image.SaveAsPng(pngName);
+                    image.SaveAsBmp(bmpName);
+                    return;
+                default:
+                    Console.Clear();
+                    Console.WriteLine("Invalid Option! Please use numbers between 1 and 4!");
+                    continue;
+            }
+        }
+    }
+
+    private static bool PopulateStream(Stream stream, string fileName, string path)
+    {
+        using BinaryWriter br = new(stream, Encoding.Unicode, true);
+
+        //Write length of extension
+        br.Write(BitConverter.GetBytes(fileName.Length));
+
+        //Write actual extension
+        stream.Write(Encoding.Unicode.GetBytes(fileName));
+
+        Console.WriteLine("Oppening File...");
+        using FileStream fileData = File.OpenRead(path);
+        if (fileData.Length > int.MaxValue)
+        {
+            br.Close();
+            stream.Close();
+            fileData.Close();
+
+            Console.WriteLine($"Data files can't be greater than {int.MaxValue} bytes!");
+            Thread.Sleep(3000);
+            return false;
         }
 
-        image.Dispose();
-        stream.Close();
+        //Writes how many bytes the file has
+        br.Write(BitConverter.GetBytes(fileData.Length));
+
+        //Writes the actual file data
+        Console.WriteLine("Writing file data to Stream...");
+        fileData.CopyTo(stream);
+        Console.WriteLine("Data copied to Stream!");
+
+        stream.Position = 0;
+
+        return true;
     }
 
     private static async Task<Image<Rgb24>> LoadImageAsync(string path)
@@ -146,12 +167,5 @@ public static class ImageProcessor
         Image<Rgb24> image = await Image.LoadAsync<Rgb24>(path);
         Console.WriteLine("Image Loaded!");
         return image;
-    }
-
-    private static async Task LoadDataFileAsync(FileStream file, Stream toCopyTo)
-    {
-        Console.WriteLine("Writing file data to Stream...");
-        await file.CopyToAsync(toCopyTo);
-        Console.WriteLine("Data copied to Stream!");
     }
 }

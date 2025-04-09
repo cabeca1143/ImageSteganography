@@ -1,4 +1,6 @@
 ﻿using BitStreamNS;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace ExtensionsNS;
 
@@ -19,25 +21,8 @@ public static class Extensions
         return reverse;
     }
 
-    internal static Stream ToStream(this Image<Rgb24> image)
-    {
-        FileStream stream = File.Open("BufferStream.buf", FileMode.Create, FileAccess.ReadWrite);
-        for (int y = 0; y < image.Height; y++)
-        {
-            for (int x = 0; x < image.Width; x++)
-            {
-                stream.WriteByte(image[x, y].R);
-                stream.WriteByte(image[x, y].G);
-                stream.WriteByte(image[x, y].B);
-            }
-        }
-
-        stream.Position = 0;
-        return stream;
-    }
-
     internal static byte GetImageByte(this byte originalByte, BitStream stream, byte bitCount)
     {
-        return stream.EndOfStream ? originalByte : originalByte.OverrideBits(stream.ReadBits(bitCount), bitCount);
+        return originalByte.OverrideBits(stream.ReadBits(bitCount), bitCount);
     }
 }
